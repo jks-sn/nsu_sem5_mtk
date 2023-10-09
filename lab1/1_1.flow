@@ -1,0 +1,11 @@
+import runtime;
+import string;
+
+arr_int_to_string(arr: [int]) -> [string] {
+	map(arr, i2s);
+}
+
+main() -> void {
+	println((strGlue(arr_int_to_string([1,2,3]), " ")));
+	quit(0);
+}

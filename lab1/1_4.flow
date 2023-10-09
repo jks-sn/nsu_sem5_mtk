@@ -1,0 +1,19 @@
+import runtime;
+import ds/tree;
+import ds/array;
+
+findIndexes(a : [int], m : int) -> [Pair<int, int>]{
+    tree : Tree = foldi(a, makeTree(), \i, t, value -> 
+            setTree(t, value, i));
+    foldi(a, [], \i, pairs, arr_i ->
+        switch (lookupTree(tree, m - arr_i)) {
+            Some(ind): concat(pairs, [Pair(i, ind)]);
+            None(): pairs;
+        });
+}
+
+main(){
+    m : int = 3;
+    a : [int] = [1, 2, 3, 4, 5];
+    println(findIndexes(a, m));
+}
