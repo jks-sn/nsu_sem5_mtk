@@ -1,0 +1,17 @@
+import runtime;
+
+fib(n: int) -> [int] {
+	if(n == 1)
+		[0]
+	else if(n == 2)
+		[0, 1]
+	else {
+		arr = fib(n - 1);
+		concat(arr, [arr[n - 2] + arr[n - 3]]);
+	}
+}
+
+main() -> void {
+	println(fib(5));
+	quit(0);
+}

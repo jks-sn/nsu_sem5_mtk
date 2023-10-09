@@ -1,0 +1,23 @@
+import runtime;
+import ds/array;
+import string;
+
+fibArr(n : int) -> [int]{
+		arr: ref [int] = ref [];
+		for(0, \i -> i < n, \i -> {
+			if (i == 0) {
+				refArrayPush(arr, 0);
+			} else if (i == 1) {
+			 	refArrayPush(arr, 1);
+    		} else {
+				refArrayPush(arr, ^arr[length(^arr) - 1] + ^arr[length(^arr) - 2]);
+			}
+			i + 1;
+		});
+		^arr;
+}
+
+main(){
+    println(fibArr(7));
+	quit(0);
+}
