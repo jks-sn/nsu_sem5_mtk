@@ -1,0 +1,8 @@
+S = types |  operations;
+operations = mult | plus;
+types = int;
+int = delimetrs digit$d delimetrs {Int(s2i($d))};
+mult = delimetrs "(" delimetrs S:a delimetrs "*" delimetrs S:b delimetrs ")" delimetrs {Mult(:a,:b)};
+plus = delimetrs "(" delimetrs S:a delimetrs "+" delimetrs S:b delimetrs ")" delimetrs {Summ(:a,:b)};
+delimetrs = (" " | "\f" | "\t" | "\v" | "\n" | "\r")*;
+digit=('0'-'9')+;

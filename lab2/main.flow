@@ -1,0 +1,15 @@
+import sys/system;
+import rpn;
+import ast_tree;
+
+main() -> void {
+	str = readUntil("\n");
+	println(expr2s((s2expr(str))));
+	println(expr2num((s2expr(str))));
+	println(rpn2s((s2rpn(str)), 0));
+	println(s2rpn(str));
+	println(rpn22s((s2rpn(str)), 0));
+	println(expr2s(rpn2expr(s2rpn(str))));
+	println(rpn2num(s2rpn(str)));
+	quit(0);
+}

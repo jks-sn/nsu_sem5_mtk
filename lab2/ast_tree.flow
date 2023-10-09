@@ -1,0 +1,58 @@
+import runtime;
+import lingo/pegcode/driver;
+
+export {
+Expression ::= Summ, Minus, Mult, Div, Double;
+Summ(a:Expression, b:Expression);
+Minus(a:Expression, b:Expression);
+Mult(a:Expression, b:Expression);
+Div(a:Expression, b:Expression);
+//Int(val:int);
+Double(val:double);
+//Var(var:string);
+s2expr(str:string) -> Expression;
+expr2s(expression:Expression) -> string;
+expr2num(expr:Expression) -> double;
+}
+s2expr(str:string) -> Expression {
+	grammar = "#include ast_tree_grammar.lingo";
+	parsic(compilePegGrammar(grammar), str, defaultPegActions);
+}
+
+expr2s(expression:Expression) -> string {
+	switch(expression) {
+		Summ(a, b): 
+			concatStrings(["(", expr2s(a), " + ", expr2s(b), ")"]);
+		Minus(a, b): 
+			concatStrings(["(", expr2s(a), " - ", expr2s(b), ")"]);
+		Mult(a, b): 
+			concatStrings(["(", expr2s(a), " * ", expr2s(b), ")"]);
+		Div(a, b): 
+			concatStrings(["(", expr2s(a), " / ", expr2s(b), ")"]);
+		Double(num): 
+			d2s(num);
+		//Var(num):
+		//	num;
+//		Int(num): 
+//			i2s(num);
+	}
+}
+
+expr2num(expr:Expression) -> double {
+	switch(expr) {
+		Summ(a, b): 
+			expr2num(a) + expr2num(b);
+		Minus(a, b): 
+			expr2num(a) - expr2num(b);
+		Mult(a, b): 
+			expr2num(a) * expr2num(b);
+		Div(a, b): 
+			expr2num(a) / expr2num(b);
+		Double(num): 
+			num;
+		//Var(num):
+		//	num;
+//		Int(num): 
+//			num;
+	}
+}
