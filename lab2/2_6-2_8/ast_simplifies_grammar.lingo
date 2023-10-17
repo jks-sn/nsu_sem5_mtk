@@ -1,0 +1,8 @@
+term = string | simplifies;
+string = (" ")* {symp};
+delimetrs = (" " | "\f" | "\t" | "\v" | "\n" | "\r")*;
+
+digit= ('0'-'9')+;
+digitDouble = ('0'-'9')+ "." ('0'-'9')+;
+
+word = ('a'-'z')+ ('0'-'9')*;

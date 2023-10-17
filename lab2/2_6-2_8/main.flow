@@ -1,0 +1,10 @@
+import sys/system;
+import ast_tree;
+
+main() -> void {
+	str = readUntil("\n");
+	println(s2expr(str));
+	//println(expr2s((s2expr(str))));
+	//println(expr2num((s2expr(str))));
+	quit(0);
+}
