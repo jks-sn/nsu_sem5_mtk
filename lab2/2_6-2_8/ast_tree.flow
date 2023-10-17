@@ -4,14 +4,13 @@ import sys/system;
 import math/math;
 
 export {
-Expression ::= Summ, Minus, Mult, Div, Pow, Double, Var;
+Expression ::= Summ, Minus, Mult, Div, Double, Var;
 Summ(a:Expression, b:Expression);
 Minus(a:Expression, b:Expression);
 Mult(a:Expression, b:Expression);
 Div(a:Expression, b:Expression);
 Double(val:double);
 Var(var:string);
-Pow(a:Var, b:Double);
 s2expr(str:string) -> Expression;
 expr2s(expression:Expression) -> string;
 expr2num(expr:Expression) -> double;
@@ -32,8 +31,6 @@ expr2s(expression:Expression) -> string {
 			concatStrings(["(", expr2s(a), " * ", expr2s(b), ")"]);
 		Div(a, b): 
 			concatStrings(["(", expr2s(a), " / ", expr2s(b), ")"]);
-		Pow(a, b):
-			concatStrings(["(", expr2s(a), " ^ ", expr2s(b)]);
 		Double(num): 
 			d2s(num);
 		Var(num):
@@ -88,8 +85,6 @@ expr2num(expr:Expression) -> double {
 			expr2num(a) * expr2num(b);
 		Div(a, b): 
 			expr2num(a) / expr2num(b);
-		Pow(a, b):
-			dpow(expr2num(a), expr2num(b));
 		Double(num): 
 			num;
 		Var(var): {

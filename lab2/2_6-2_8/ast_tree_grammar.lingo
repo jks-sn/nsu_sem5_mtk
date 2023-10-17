@@ -1,5 +1,5 @@
 term = simplifies | types |  operations | simptree;
-simplifies = simp1 | simp2 | simp3 | simp4 | simp5;
+simplifies = simp1 | simp2 | simp3;
 simptree = simptree1;
 operations = plus | minus | mult | div | neg;
 types = double | int | var;
@@ -7,10 +7,6 @@ types = double | int | var;
 simp1 = delimetrs "(" delimetrs "0" delimetrs "+" delimetrs term:a delimetrs ")" delimetrs {:a};
 simp2 = delimetrs "(" delimetrs "0" delimetrs "*" delimetrs term:a delimetrs ")" delimetrs {Double(s2d("0"))};
 simp3 = delimetrs "(" delimetrs "1" delimetrs "*" delimetrs term:a delimetrs ")" delimetrs {:a};
-simp4 = delimetrs "(" delimetrs var:a delimetrs "*" delimetrs var:a delimetrs  ")" delimetrs {Pow(:a, Double(s2d("2")))};
-simp5 = delimetrs "(" delimetrs var:a delimetrs "*" simp4 ")" delimetrs {Pow(:a, Double(s2d("3")))}; 
-//simp6 = deliemtrs "(" delimetrs var:a delimetrs "*" Pow(a: Var, b: Double) delimetrs {Pow(:a, Summ(:b, s2d("1")))};
-simptree1 = Mult(:a, Pow(:a,:b)) {Pow(:a, Summ(:b, Double(s2d("1"))))};
 
 int = delimetrs digit$s delimetrs {Double(s2d($s))};
 double = delimetrs digitDouble$s delimetrs {Double(s2d($s))};
@@ -21,7 +17,6 @@ minus = delimetrs "(" delimetrs term:a delimetrs "-" delimetrs term:b delimetrs 
 mult = delimetrs "(" delimetrs term:a delimetrs "*" delimetrs term:b delimetrs ")" delimetrs {Mult(:a,:b)};
 div = delimetrs "(" delimetrs term:a delimetrs "/" delimetrs term:b delimetrs ")" delimetrs {Div(:a,:b)};
 neg = delimetrs "(" delimetrs "-" delimetrs term:a delimetrs ")" delimetrs {Minus(Double(s2d("0")), :a)};
-pow = delimetrs "(" delimetrs var:a delimetrs "^" delimetrs double:b delimetrs {Pow(:a, :b)};
 
 delimetrs = (" " | "\f" | "\t" | "\v" | "\n" | "\r")*;
 
