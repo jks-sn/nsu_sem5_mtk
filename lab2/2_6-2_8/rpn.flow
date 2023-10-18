@@ -1,0 +1,90 @@
+import ast_tree;
+import net/url_parameter;
+import sys/system;
+import net/url_parameter;
+import ds/array;
+import string;
+
+export {
+	Rpn(rpn:[RpnElement]);
+	RpnElement ::= RpnOperation, RpnNum, RpnVar;
+	RpnOperation(id:string, operation: (double,double)-> double);
+	RpnNum(val:double);
+	RpnVar(var:string);
+	expr2rpn(expr:Expression) -> Rpn;
+	s2rpn(s:string) -> Rpn;
+	rpn2s(rpn:Rpn, index:int) -> string;
+	rpn22s(expr_rpn:Rpn, i: int) -> string;
+	rpn2expr(expr_rpn:Rpn) -> Expression;
+	rpn2num(expr_rpn:Rpn) -> double;
+}
+
+expr2rpn(expr:Expression) -> Rpn {
+	switch(expr) {
+		Div(a, b): 
+			Rpn(concat([RpnOperation("/", \i1,i2 -> i1/i2)], concat(expr2rpn(a).rpn, expr2rpn(b).rpn)));
+		Minus(a, b): 
+			Rpn(concat([RpnOperation("-", \i1,i2 -> i1-i2)], concat(expr2rpn(a).rpn, expr2rpn(b).rpn)));
+		Summ(a, b): 
+			Rpn(concat([RpnOperation("+", \i1,i2 -> i1+i2)], concat(expr2rpn(a).rpn, expr2rpn(b).rpn)));
+		Mult(a, b): 
+			Rpn(concat([RpnOperation("*", \i1,i2 -> i1*i2)], concat(expr2rpn(a).rpn, expr2rpn(b).rpn)));
+		Double(num): 
+			Rpn([RpnNum(num)]);
+		//Int(num):
+		//	Rpn([RpnNum(i2d(num))]);
+		//Var(var):
+		//	Rpn([RpnVar(var)]);
+	}
+}
+// rpn2expr(rpn:Rpn, i: int) -> Expression {
+// 	if(i < 0 || i >= length(expr_rpn.rpn))
+// 		"error"
+// 	else 
+// 	{
+// 		expr: Expression
+// 	}
+// }
+
+rpn2s(expr_rpn:Rpn, index:int) -> string {
+	//println(expr_rpn.rpn);
+	if(index < 0 || index >= length(expr_rpn.rpn))
+		"error"
+	else
+	{
+		switch(expr_rpn.rpn[index]) {
+			RpnOperation(id, operation):
+				if(index + 1 >= length(expr_rpn.rpn))
+					id
+				else	
+					strGlue([rpn2s(expr_rpn, index+1), id], " ");
+			RpnNum(val):
+				if(index + 1 >= length(expr_rpn.rpn))
+					d2s(val)
+				else	
+					strGlue([rpn2s(expr_rpn, index+1), d2s(val)], " ");
+			RpnVar(var):
+				if(index + 1 >= length(expr_rpn.rpn))
+					var
+				else	
+					strGlue([rpn2s(expr_rpn, index+1),var], " ");	
+		}
+	}
+}
+
+rpn22s(expr_rpn:Rpn, i: int) -> string {
+	if(i + 3 == length(expr_rpn.rpn))
+		concatStrings(["(", rpn2s(Rpn([expr_rpn.rpn[i + 1]]), 0), rpn2s(Rpn([expr_rpn.rpn[i]]), 0), rpn2s(Rpn([expr_rpn.rpn[i + 2]]), 0), ")"])
+	else
+		concatStrings(["(", rpn2s(Rpn([expr_rpn.rpn[i+1]]), 0), rpn2s(Rpn([expr_rpn.rpn[i]]), 0), rpn22s(expr_rpn, i + 2), ")"])
+}
+
+rpn2expr(expr_rpn:Rpn) -> Expression {
+ 	s2expr(rpn22s(expr_rpn, 0));
+}
+rpn2num(expr_rpn:Rpn) -> double {
+	expr2num(s2expr(rpn22s(expr_rpn, 0)));
+}
+s2rpn(s:string) -> Rpn {
+	expr2rpn(s2expr(s));
+}

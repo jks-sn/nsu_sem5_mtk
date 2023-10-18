@@ -1,0 +1,27 @@
+term = simplifies | types |  operations | simptree;
+simplifies = simp1 | simp2 | simp3;
+simptree = simptree1;
+operations = plus | minus | mult | div | neg;
+types = double | int | var;
+
+simp1 = delimetrs "(" delimetrs "0" delimetrs "+" delimetrs term:a delimetrs ")" delimetrs {:a};
+simp2 = delimetrs "(" delimetrs "0" delimetrs "*" delimetrs term:a delimetrs ")" delimetrs {Double(s2d("0"))};
+simp3 = delimetrs "(" delimetrs "1" delimetrs "*" delimetrs term:a delimetrs ")" delimetrs {:a};
+
+int = delimetrs digit$s delimetrs {Double(s2d($s))};
+double = delimetrs digitDouble$s delimetrs {Double(s2d($s))};
+var = delimetrs word$s delimetrs {Var($s)};
+
+plus = delimetrs "(" delimetrs term:a delimetrs "+" delimetrs term:b delimetrs ")" delimetrs {Summ(:a,:b)};
+minus = delimetrs "(" delimetrs term:a delimetrs "-" delimetrs term:b delimetrs ")" delimetrs {Minus(:a,:b)};
+mult = delimetrs "(" delimetrs term:a delimetrs "*" delimetrs term:b delimetrs ")" delimetrs {Mult(:a,:b)};
+div = delimetrs "(" delimetrs term:a delimetrs "/" delimetrs term:b delimetrs ")" delimetrs {Div(:a,:b)};
+neg = delimetrs "(" delimetrs "-" delimetrs term:a delimetrs ")" delimetrs {Minus(Double(s2d("0")), :a)};
+
+delimetrs = (" " | "\f" | "\t" | "\v" | "\n" | "\r")*;
+
+
+digit= ('0'-'9')+;
+digitDouble = ('0'-'9')+ "." ('0'-'9')+;
+
+word = ('a'-'z')+ ('0'-'9')*;

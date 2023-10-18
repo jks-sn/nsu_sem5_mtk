@@ -1,0 +1,40 @@
+import runtime;
+import lingo/pegcode/driver;
+
+Expression ::= Summ, Mult, Int;
+Summ(a:Expression, b:Expression);
+Mult(a:Expression, b:Expression);
+Int(val:int);
+
+s2expr(str:string) -> Expression {
+	grammar = "#include ast_tree_grammar.lingo";
+	parsic(compilePegGrammar(grammar), str, defaultPegActions);
+}
+
+expr2s(expression:Expression) -> string {
+	switch(expression) {
+		Summ(a, b): 
+			concatStrings(["(", expr2s(a), " + ", expr2s(b), ")"]);
+		Mult(a, b): 
+			concatStrings(["(", expr2s(a), " * ", expr2s(b), ")"]);
+		Int(num): 
+			i2s(num);
+	}
+}
+
+expr2num(expr:Expression) -> int {
+	switch(expr) {
+		Summ(a, b): 
+			expr2num(a) + expr2num(b);
+		Mult(a, b): 
+			expr2num(a) * expr2num(b);
+		Int(num): 
+			num;
+	}
+}
+
+main() -> void {
+	println(expr2s(s2expr("\n\n (12  \t\t+(100  *4) \r\r  )\n\n")));
+	println(expr2num(s2expr("(\t\t(355  +((0 + 0)\n\n*4)) + 3\n\n)")));
+	quit(0);
+}

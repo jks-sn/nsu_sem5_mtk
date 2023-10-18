@@ -1,0 +1,95 @@
+import runtime;
+import lingo/pegcode/driver;
+import sys/system;
+import math/math;
+
+export {
+Expression ::= Summ, Minus, Mult, Div, Double, Var;
+Summ(a:Expression, b:Expression);
+Minus(a:Expression, b:Expression);
+Mult(a:Expression, b:Expression);
+Div(a:Expression, b:Expression);
+Double(val:double);
+Var(var:string);
+s2expr(str:string) -> Expression;
+expr2s(expression:Expression) -> string;
+expr2num(expr:Expression) -> double;
+//expr_dearr(expression:Expression) -> Expression;
+}
+s2expr(str:string) -> Expression {
+	grammar = "#include ast_tree_grammar.lingo";
+	parsic(compilePegGrammar(grammar), str, defaultPegActions);
+}
+
+expr2s(expression:Expression) -> string {
+	switch(expression) {
+		Summ(a, b): 
+			concatStrings(["(", expr2s(a), " + ", expr2s(b), ")"]);
+		Minus(a, b): 
+			concatStrings(["(", expr2s(a), " - ", expr2s(b), ")"]);
+		Mult(a, b): 
+			concatStrings(["(", expr2s(a), " * ", expr2s(b), ")"]);
+		Div(a, b): 
+			concatStrings(["(", expr2s(a), " / ", expr2s(b), ")"]);
+		Double(num): 
+			d2s(num);
+		Var(num):
+			num;
+	}
+}
+
+// expr_dearr(expression:Expression) -> Expression {
+// 	switch(expression) {
+// 		Summ(a, b): {
+// 			Summ(expr_dearr(a), expr_dearr(b));
+// 		}
+// 		Minus(a, b): {
+// 			Minus(expr_dearr(a), expr_dearr(b));
+// 		}
+// 		Mult(a, b): 
+// 			Summ(Mult(expr_dearr(a),b), Mult(a,expr_dearr(b)));
+// 		Div(a,b):
+// 			Div(Minus(Mult(expr_dearr(a),b), Mult(a,expr_dearr(b))), Mult(b, b));
+// 		Double(num) :
+// 			Double(s2d("0"));
+// 		Var(var):
+// 			Double(s2d("1"));
+// 	}
+// }
+
+// exp2polin(expression:Expression) -> string {
+// 	switch(expression) {
+// 		Summ(a, b): 
+// 			concatStrings(["(", expr2s(a), " + ", expr2s(b), ")"]);
+// 		Minus(a, b): 
+// 			concatStrings(["(", expr2s(a), " - ", expr2s(b), ")"]);
+// 		Mult(a, b):{
+// 			concatStrings(["(", expr2s(a), " * ", expr2s(b), ")"]);
+// 		}
+// 		Div(a, b): 
+// 			concatStrings(["(", expr2s(a), " / ", expr2s(b), ")"]);
+// 		Double(num): 
+// 			d2s(num);
+// 		Var(num):
+// 			num;
+// 	}
+// }
+
+expr2num(expr:Expression) -> double {
+	switch(expr) {
+		Summ(a, b): 
+			expr2num(a) + expr2num(b);
+		Minus(a, b): 
+			expr2num(a) - expr2num(b);
+		Mult(a, b): 
+			expr2num(a) * expr2num(b);
+		Div(a, b): 
+			expr2num(a) / expr2num(b);
+		Double(num): 
+			num;
+		Var(var): {
+			println(concatStrings(["Enter num for var ", var]));
+			s2d(readUntil("\n"));
+		}
+	}
+}

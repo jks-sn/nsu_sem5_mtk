@@ -1,0 +1,11 @@
+S = sum|mult|sub|div|minus|int|var;
+sum = delimetrs "(" delimetrs S:l delimetrs "+" delimetrs S:r delimetrs ")" delimetrs { SumExp(:l, :r) };
+mult = delimetrs "(" delimetrs S:l delimetrs "*" delimetrs S:r delimetrs ")" delimetrs { MultExp(:l,:r)};
+sub = delimetrs "(" delimetrs S:l delimetrs "-" delimetrs S:r delimetrs ")" delimetrs { SubExp(:l, :r) };
+div = delimetrs "(" delimetrs S:l delimetrs "/" delimetrs S:r delimetrs ")" delimetrs { DivExp(:l, :r) };
+minus = delimetrs "(" delimetrs "-" delimetrs S:epxr delimetrs ")" delimetrs {MinusExp(:epxr)};
+int = digit+ $S {IntExp(s2i($S))};
+digit = '0'-'9';
+var = word $S {VarExp($S)};
+word = ('a'-'z')+ ('0'-'9')*;
+delimetrs = (" " | "\f" | "\t" | "\v" | "\n" | "\r")*;
