@@ -1,0 +1,221 @@
+import maybe;
+import ds/tree;
+import ds/array;
+import string;
+import lingo/pegcode/driver;
+import math/math;
+import sys/system;
+
+Polynom(sum: Tree<PolynomElement, int>);
+PolynomElement(prod: Tree<string, int>);
+RationalFunction(num: Polynom, den: Polynom);
+alg2rf(e: ArExp) -> RationalFunction;
+rf2s(rf: RationalFunction) -> string;
+
+sumPolynoms(l: Polynom, r: Polynom) -> Polynom;
+multPolynoms(l: Polynom, r: Polynom) -> Polynom;
+multPolynomElements(l: PolynomElement, r: PolynomElement) -> PolynomElement;
+p2s(p: Polynom) -> string;
+pp2s(pp: PolynomElement) -> string;
+
+Rational(num: int, den: int);
+multRationals(l: Rational, r: Rational) -> Rational;  
+divRationals(l: Rational, r: Rational) -> Rational;  
+sumRationals(l: Rational, r: Rational) -> Rational;
+subRationals(l: Rational, r: Rational) -> Rational;
+minusRational(r: Rational) -> Rational;
+r2s(e: Rational) -> string;
+
+p2s(polin: Polynom) -> string {
+    trim2(concatStrings(foldTree(polin.sum, [], \k,v,acc -> concat(acc, [i2s(v) + pp2s(k) + "+"]))), "+");
+}
+
+rf2s(rf: RationalFunction) -> string {
+    if (rf.den ==  Polynom(setTree(makeTree(), PolynomElement(makeTree()), 1))) {
+        p2s(rf.num);
+    } else {
+        concatStrings(["(", p2s(rf.num) ,") / (", p2s(rf.den) ,")"]);
+    }
+}
+
+pp2s(e: PolynomElement) -> string {
+    concatStrings(foldTree(e.prod , [], \k, v, acc -> concat(acc, [k + "^" + i2s(v)])));
+}
+
+multPolynomElements(l: PolynomElement, r: PolynomElement) -> PolynomElement {
+    PolynomElement(mergeTreeCustom(l.prod, r.prod, \k, lv, rv -> rv + lv));
+}
+
+alg2rf(e: ArExp) -> RationalFunction {
+    rf = switch (e) {
+        SumExp(l,r): sumRationalFunctions(alg2rf(l) , alg2rf(r));
+        MultExp(l,r): multRationalFunctions(alg2rf(l), alg2rf(r));
+        SubExp(l,r): subRationalFunctions(alg2rf(l), alg2rf(r));
+        DivExp(l,r): divRationalFunctions(alg2rf(l), alg2rf(r));
+        MinusExp(expr): minusRationalFunction(alg2rf(expr));
+        IntExp(v): RationalFunction(
+            Polynom(setTree(makeTree(), PolynomElement(makeTree()), v)),
+            Polynom(setTree(makeTree(), PolynomElement(makeTree()), 1))
+        );
+        VarExp(name): RationalFunction(
+            Polynom(setTree(makeTree(), PolynomElement(setTreeValues(makeTree(),[Pair(name, 1)])), 1)),
+            Polynom(setTree(makeTree(), PolynomElement(makeTree()), 1))
+        );
+    }
+    println(rf);
+	println(filterPolynom(rf.num));
+    rf2 = RationalFunction(filterPolynom(rf.num), filterPolynom(rf.den));
+    println(rf);
+	println(filterPolynom(rf.num));
+	polyGCD = gcd(coefGCD(rf2.num), coefGCD(rf2.den));
+    rf3 = divRationalFunctionByInt(rf2, polyGCD);
+    numGCD = coefGCD(rf3.num);
+    rf3_num = divPolynom(rf3.num, numGCD);
+    if (rf3_num == rf3.den) {
+        RationalFunction(Polynom(setTree(makeTree(), PolynomElement(makeTree()), numGCD)), Polynom(setTree(makeTree(), PolynomElement(makeTree()), 1)));
+    } else {
+        rf3;
+    }
+}
+
+filterPolynom(p: Polynom) -> Polynom {
+    Polynom(filterTree(p.sum, \k, v -> v != 0));
+}
+
+coefGCD(p: Polynom) -> int {
+    initial = getTreeValues(p.sum)[0];
+    foldTree(p.sum, initial, \k, v, acc -> gcd(acc,v));
+}
+
+divPolynom(p: Polynom, c: int) -> Polynom {
+    Polynom(mapTree(p.sum, \v -> v/c));
+}
+
+divRationalFunctionByInt(rf: RationalFunction, c: int) -> RationalFunction {
+    RationalFunction(divPolynom(rf.num, c), divPolynom(rf.den, c));
+}
+
+sumRationalFunctions(l: RationalFunction, r: RationalFunction) -> RationalFunction {
+     RationalFunction(sumPolynoms(multPolynoms(l.num, r.den), multPolynoms(r.num, l.den)), multPolynoms(l.den, r.den));
+ }
+
+subRationalFunctions(l: RationalFunction, r: RationalFunction) -> RationalFunction {
+     RationalFunction(sumPolynoms(multPolynoms(l.num, r.den), minusPolynom(multPolynoms(r.num, l.den))), multPolynoms(l.den, r.den));
+ }
+
+multRationalFunctions(l: RationalFunction, r: RationalFunction) -> RationalFunction {
+     RationalFunction(multPolynoms(l.num, r.num), multPolynoms(l.den, r.den));
+ }
+
+divRationalFunctions(l: RationalFunction, r: RationalFunction) -> RationalFunction {
+     RationalFunction(multPolynoms(l.num, r.den), multPolynoms(l.den, r.num));
+}
+
+minusRationalFunction(rf: RationalFunction) -> RationalFunction {
+     RationalFunction(minusPolynom(rf.num), rf.den);
+}
+
+sumPolynoms(l: Polynom, r: Polynom) {
+    Polynom(mergeTreeCustom(l.sum, r.sum, \k, lv, rv -> lv + rv));
+}
+
+multPolynoms(l: Polynom, r: Polynom) {
+    Polynom(foldTree(l.sum, makeTree(), \lp, lc, acc -> {
+        foldTree(r.sum, acc, \rp, rc, ac -> {
+            pp = multPolynomElements(lp, rp);
+            switch(lookupTree(ac, pp)) {
+                Some(coef): setTree(ac, pp, coef + (lc * rc));
+                None(): setTree(ac, pp, (lc * rc));
+            }     
+        });
+    }));
+}
+
+minusPolynom(p: Polynom) -> Polynom {
+     Polynom(mapTree(p.sum, \r -> -r));
+}
+
+multRationals(l: Rational, r: Rational) -> Rational {
+    cdiv = gcd(l.num * r.num, l.den * r.den);
+    Rational((l.num * r.num) / cdiv, (l.den * r.den) / cdiv);
+}
+
+minusRational(r: Rational) -> Rational{
+     Rational(- r.num, r.den);
+ }
+
+divRationals(l: Rational, r: Rational) -> Rational {
+    cdiv = gcd(l.num * r.den, l.den * r.num);
+    Rational((l.num * r.den) / cdiv, (l.den * r.num) / cdiv);
+}
+
+sumRationals(l: Rational, r: Rational) -> Rational {
+    if (l.den == r.den) {
+        Rational(l.num + r.num, l.den);
+    } else {
+        cdiv = gcd(l.num * r.den + r.num * l.den, l.den * r.den);
+        Rational((l.num * r.den + r.num * l.den) / cdiv, (l.den * r.den) / cdiv);
+    }
+}
+
+subRationals(l: Rational, r: Rational) -> Rational {
+    if (l.den == r.den) {
+        if (l.num - r.num == 0) {
+            Rational(l.num - r.num, 1);
+        } else {
+            Rational(l.num - r.num, l.den);
+        }
+    } else {
+        cdiv = gcd(l.num * r.den - r.num * l.den, l.den * r.den);
+        if (l.num * r.den - r.num * l.den == 0) { 
+            Rational(l.num * r.den - r.num * l.den, 1);
+        } else {
+            Rational((l.num * r.den - r.num * l.den) / cdiv, (l.den * r.den) / cdiv);
+        }
+    }
+}
+
+r2s(e: Rational) -> string {
+    if (e.den == 1) {
+        i2s(e.num);
+    } else {
+        concatStrings([i2s(e.num), "/", i2s(e.den)]);
+    }
+}
+
+ArExp ::= SumExp, MultExp, SubExp, DivExp, MinusExp, IntExp, VarExp;
+
+SumExp(lhs:ArExp, rhs:ArExp);
+MultExp(lhs:ArExp, rhs:ArExp);
+SubExp(lhs:ArExp, rhs:ArExp);
+DivExp(lhs:ArExp, rhs:ArExp);
+MinusExp(expr: ArExp);
+IntExp(val: int);
+VarExp(name: string);
+
+gram = "#include grammar.lingo"
+
+ar2s(e: ArExp) -> string{
+    switch (e) {
+        SumExp(left,right): concatStrings(["(",ar2s(left),"+",ar2s(right),")"]);
+        MultExp(left,right): concatStrings(["(",ar2s(left),"*",ar2s(right),")"]);
+        SubExp(left,right): concatStrings(["(",ar2s(left),"-",ar2s(right),")"]);
+        DivExp(left,right): concatStrings(["(",ar2s(left),"/",ar2s(right),")"]);
+        MinusExp(expr): concatStrings(["-",ar2s(expr)]);
+        IntExp(value): i2s(value);
+        VarExp(name): name;
+    }
+}
+
+s2ar(s: string) -> ArExp {
+    parser = compilePegGrammar(gram);
+    parsic(parser, s, defaultPegActions);
+}
+
+main() -> void {
+	str = readUntil("\n");
+    //println(s2ar(str));
+    println(alg2rf(s2ar(str)));
+    println(rf2s(alg2rf(s2ar(str))));
+	quit(0);
+}
