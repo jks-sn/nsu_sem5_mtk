@@ -1,0 +1,79 @@
+nemo_structure = declaration*:d delimetrs "{" delimetrs instruction*:i "}" delimetrs {
+    NemoStructure(:d, :i)
+};
+
+declaration = "var" delimetrs name:a delimetrs ":" delimetrs type:t delimetrs ";" delimetrs {
+    NemoDeclaration(:a, :t)
+};
+
+instruction =  assign | test | loop |;
+
+expression = const | operation_un | operation_bin | apply | update | var;
+
+// seq = "{" delimetrs instruction*:s delimetrs "}" delimetrs { 
+//     NemoSequence(:s)
+// };
+
+//sequence = instruction delimetrs;
+ 
+select = "U" delimetrs instruction delimetrs;
+
+update = "update" delimetrs "(" delimetrs expression:a delimetrs "," delimetrs expression:i "," delimetrs expression:v ")" delimetrs {
+    NemoUpdate(:a, :i, :v)
+};
+
+test = "(" delimetrs expression:e1 condition$s delimetrs expression:e2 ")" delimetrs "?" delimetrs { 
+    NemoTest($s, :e1, :e2)
+};
+
+apply = "apply" delimetrs "(" delimetrs expression:expr1 delimetrs "," delimetrs expression:expr2 ")" delimetrs {
+    NemoApply(:expr1, :expr2)
+};
+
+assign = name:a delimetrs ":=" delimetrs expression:e delimetrs ";" delimetrs {
+    NemoAssign(:a, :e)	
+};
+
+
+loop = "*" delimetrs instruction:b delimetrs {
+    NemoLoop(:b)
+};
+
+
+const = some_digit$s delimetrs {
+    NemoInt(s2i($s))
+};
+
+operation_un = ("-")+ $s delimetrs expression:e delimetrs {
+	NemoUnary($s, :e)
+};
+
+operation_bin = "(" delimetrs expression:l delimetrs ("+"|"*"|"/"|"-"|"%")+ $s delimetrs expression:r delimetrs ")" delimetrs {
+    NemoBinary($s, :l, :r) 
+};
+
+type = int | array;
+
+int = "int" delimetrs {
+    NemoDeclarationInt() 
+};
+
+array = "[" delimetrs type:t delimetrs "]" delimetrs {
+    NemoDeclarationArr(:t)
+};
+
+var = name:a { 
+    NemoVar(:a)
+};										
+
+name = word$s {
+    $s 
+};
+
+word = (some_letter maybe_digit);
+some_letter = ('a'-'z')+;
+maybe_letter = ('a'-'z')*;
+some_digit  = ('0'-'9')+;
+maybe_digit  = ('0'-'9')*;
+condition = ("!=" | "==" | "<=" | ">=" | "<" | ">")+;
+delimetrs = (' ' | '\t' | '\n' | '\r')*;

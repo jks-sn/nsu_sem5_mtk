@@ -1,0 +1,77 @@
+import ds/set;
+import ds/tree;
+import string;
+import lingo/pegcode/driver;
+
+export {
+	NemoStructure(declarations : [NemoDeclaration], instructions : [NemoInstruction]);
+
+	NemoType ::= NemoInt, NemoArr;
+	NemoInt(value : int);
+	NemoArr(arr : [NemoType]);
+	NemoVar(name : string);
+	NemoCondition(vars : Tree<string, NemoType>);
+	
+	NemoDeclaration(var : string, type : NemoDeclarationType);
+	NemoDeclarationType ::= NemoDeclarationInt, NemoDeclarationArr;
+	NemoDeclarationInt();
+	NemoDeclarationArr(type : NemoDeclarationType);
+
+	NemoExpression ::= NemoUnary, NemoBinary, NemoApply, NemoUpdate, NemoVar, NemoInt;
+	NemoUnary(operation: string, expression : NemoExpression);
+	NemoBinary(operation: string, left_action : NemoExpression, right_action : NemoExpression);
+	NemoApply(arr : NemoExpression, index : NemoExpression);
+	NemoUpdate(arr : NemoExpression, index : NemoExpression, value : NemoExpression);
+
+	NemoInstruction ::= NemoAssign, NemoTest, NemoSelect,  NemoCycle;
+	NemoAssign(var : string, value : NemoExpression);
+	NemoTest(condition : string, true_action : NemoExpression, false_action : NemoExpression);
+	NemoSelect(instructions : [NemoInstruction]);
+	NemoCycle(body : NemoInstruction);
+	NemoStructure_to_string(structure : NemoStructure) -> string;
+	NemoType_to_string(type : NemoDeclarationType) -> string;
+	NemoDeclaration_to_string(declaration : NemoDeclaration) -> string;
+	NemoExpression_to_string(expression : NemoExpression) -> string;
+	NemoInstruction_to_string(instruction : NemoInstruction) -> string;
+	string_to_Nemo(str : string) -> NemoStructure;
+}
+
+NemoStructure_to_string(structure : NemoStructure) -> string {
+	strGlue(map(structure.declarations, NemoDeclaration_to_string), "\n") + "\n" + "{" + "\n" + strGlue(map(structure.instructions, NemoInstruction_to_string), "\n") + "\n" + "}" + "\n";
+}
+
+NemoType_to_string(type : NemoDeclarationType) -> string {
+	switch (type) {
+		NemoDeclarationInt(): "int";
+		NemoDeclarationArr(arr): "[" + NemoType_to_string(arr) + "]";
+	}
+}
+
+NemoDeclaration_to_string(declaration : NemoDeclaration) -> string {
+	"var " + declaration.var + " : " + NemoType_to_string(declaration.type) + ";"
+}
+
+NemoExpression_to_string(expression : NemoExpression) -> string {
+	switch (expression) {
+		NemoUnary(operation, expr): operation + " " + NemoExpression_to_string(expr);
+		NemoBinary(operation, correct_action, incorrect_action): "(" + NemoExpression_to_string(correct_action) + " " + operation + " " + NemoExpression_to_string(incorrect_action) + ")";
+		NemoApply(a, i): "apply(" + NemoExpression_to_string(a) + ", " + NemoExpression_to_string(i) + ")";
+		NemoUpdate(a, i, v): "update(" + NemoExpression_to_string(a) + ", " + NemoExpression_to_string(i) + ", " + NemoExpression_to_string(v) + ")";
+		NemoVar(name): name;
+		NemoInt(value): i2s(value);
+	}
+}
+
+NemoInstruction_to_string(instruction : NemoInstruction) -> string {
+	switch (instruction) {
+		NemoAssign(variable, expression): variable + " := " + NemoExpression_to_string(expression);
+		NemoTest(condition, correct_action, incorrect_action): "(" + NemoExpression_to_string(correct_action) + " " + condition + " " + NemoExpression_to_string(incorrect_action) + ")"; 
+		NemoSelect(expression): "{" + strGlue(map(expression, \s -> strGlue(map(strSplit(NemoInstruction_to_string(s), "\n"), \split_str -> "" + split_str), "")), "U") + "}\n";
+		NemoCycle(body): "*" + NemoInstruction_to_string(body);
+	}
+}
+
+string_to_Nemo(str : string) -> NemoStructure {
+	nemo_grammar = "#include NeMo.lingo";
+	parsic(compilePegGrammar(nemo_grammar), str, defaultPegActions);
+}

@@ -1,0 +1,14 @@
+import NeMo;
+
+main() -> void {
+	fileName = "summ.nm";
+	println(getFileContent(fileName));
+	NeMo = string_to_Nemo(getFileContent(fileName));
+
+	println("NeMo structure:");
+	println(NeMo);
+
+	println("NeMo code:");
+	println(NemoStructure_to_string(NeMo));
+	quit(0);
+}
