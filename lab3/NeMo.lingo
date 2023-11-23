@@ -1,47 +1,35 @@
-nemo_structure = declaration*:d delimetrs "{" delimetrs instruction*:i "}" delimetrs {
-    NemoStructure(:d, :i)
+structure = declaration*:d delimetrs instruction:i delimetrs {
+    debug(NemoStructure(:d, :i))
 };
 
 declaration = "var" delimetrs name:a delimetrs ":" delimetrs type:t delimetrs ";" delimetrs {
-    NemoDeclaration(:a, :t)
+    debug(NemoDeclaration(:a, :t))
 };
 
-instruction =  assign | test | loop |;
+instruction = assign | test | loop | sequence;
 
-expression = const | operation_un | operation_bin | apply | update | var;
+expression = const | operation_un | operation_bin| var;
 
-// seq = "{" delimetrs instruction*:s delimetrs "}" delimetrs { 
-//     NemoSequence(:s)
-// };
-
-//sequence = instruction delimetrs;
- 
-select = "U" delimetrs instruction delimetrs;
-
-update = "update" delimetrs "(" delimetrs expression:a delimetrs "," delimetrs expression:i "," delimetrs expression:v ")" delimetrs {
-    NemoUpdate(:a, :i, :v)
+sequence = "{" delimetrs instruction*:q delimetrs "}" delimetrs { 
+    debug(NemoSequence(:q))
 };
 
-test = "(" delimetrs expression:e1 condition$s delimetrs expression:e2 ")" delimetrs "?" delimetrs { 
-    NemoTest($s, :e1, :e2)
+test = "(" delimetrs expression:e1 delimetrs condition$s delimetrs expression:e2 delimetrs ")" delimetrs "?" delimetrs ";" delimetrs { 
+    debug(NemoTest($s, :e1, :e2))
 };
 
-apply = "apply" delimetrs "(" delimetrs expression:expr1 delimetrs "," delimetrs expression:expr2 ")" delimetrs {
-    NemoApply(:expr1, :expr2)
-};
-
-assign = name:a delimetrs ":=" delimetrs expression:e delimetrs ";" delimetrs {
-    NemoAssign(:a, :e)	
+assign = name:a delimetrs ":=" delimetrs expression:e ";" delimetrs {
+    debug(NemoAssign(:a, :e))
 };
 
 
-loop = "*" delimetrs instruction:b delimetrs {
-    NemoLoop(:b)
+loop = "*" delimetrs test:b delimetrs {
+    debug(NemoCycle(:b))
 };
 
 
 const = some_digit$s delimetrs {
-    NemoInt(s2i($s))
+    debug(NemoInt(s2i($s)))
 };
 
 operation_un = ("-")+ $s delimetrs expression:e delimetrs {
@@ -55,7 +43,7 @@ operation_bin = "(" delimetrs expression:l delimetrs ("+"|"*"|"/"|"-"|"%")+ $s d
 type = int | array;
 
 int = "int" delimetrs {
-    NemoDeclarationInt() 
+   debug(NemoDeclarationInt())
 };
 
 array = "[" delimetrs type:t delimetrs "]" delimetrs {
@@ -63,7 +51,7 @@ array = "[" delimetrs type:t delimetrs "]" delimetrs {
 };
 
 var = name:a { 
-    NemoVar(:a)
+    debug(NemoVar(:a))
 };										
 
 name = word$s {

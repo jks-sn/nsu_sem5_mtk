@@ -1,0 +1,73 @@
+nemo_structure = declaration *:d delimetrs instruction*:b delimetrs {
+    VNemoStructure(:d, :b)
+};
+
+declaration = "VAR" delimetrs variable:v ":" delimetrs type:t ";" delimetrs {
+    debug(NemoDeclaration(:v, :t))
+};
+
+instruction = int_value ":" delimetrs (assign | condition) delimetrs;
+
+assign = variable:v delimetrs ":=" delimetrs expression:e delimetrs places:gt delimetrs  { 
+    debug(VNemoAssign(:v, :e, :gt))
+};
+
+condition = "if" delimetrs "(" delimetrs expression:e1 delimetrs cond$s delimetrs expression:e2 delimetrs ")" delimetrs  "then" delimetrs places:pos delimetrs "else" delimetrs places:neg delimetrs { 
+    debug(VNemoCondition($s, :e1, :e2, :pos, :neg))
+};
+
+places = "goto" delimetrs "{" delimetrs label*:l  delimetrs "}" delimetrs {
+    debug(:l)
+};
+
+expression = const | un_op | bin_op | var | arr;
+
+const  = int_value:v {
+    debug(NemoInt(:v))
+};
+
+un_op  = "-" $s delimetrs expression:e delimetrs {
+    debug(NemoUnary($s, :e))
+};
+
+bin_op = "(" delimetrs expression:l ("+"|"*"|"/"|"-"|"%") $s delimetrs expression:r ")" delimetrs {
+    debug(NemoBinary($s, :l, :r))
+};
+
+var = variable :v {
+    debug(NemoVar(:v))
+};
+
+arr = "[" delimetrs expression:e arr_value*:v delimetrs"]" delimetrs {
+    debug(VNemoArray(:e, :v))
+};
+
+type  = int | array;
+
+int = "INT" delimetrs { 
+    debug(NemoDeclarationInt())
+};
+
+array = "[" delimetrs type:t delimetrs "]" delimetrs {
+    debug(NemoDeclarationArr(:t))
+};
+
+int_value = digit+ $s delimetrs {
+    debug(s2i($s))
+};
+
+arr_value = "," delimetrs expression;
+
+cond = "!=" | "==" | "<=" | ">=" | "<" | ">" ;
+
+variable = letter+ $s delimetrs {
+    debug($s)
+};
+
+label = digit+$s (",")* delimetrs {
+    debug(s2i($s))
+};
+
+letter = 'a'-'z';
+digit  = '0'-'9';
+delimetrs = (' ' | '\t' | '\n' | '\r')*;

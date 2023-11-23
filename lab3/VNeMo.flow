@@ -1,0 +1,160 @@
+import runtime;
+import NeMo;
+
+export{
+	VNemoStructure(declarations : [NemoDeclaration], instructions : [VNemoInstruction]);
+    VNemoInstruction ::=  VNemoAssign, VNemoCondition;
+    VNemoAssign(variable : string, value : NemoExpression, places : [int]);
+    VNemoCondition(condition : string, correct_action : NemoExpression, incorrect_action : NemoExpression, correct_points : [int], incorrect_points : [int]);
+    VNemoSequence(instructions : [[VNemoInstruction]], maximum_point : int);
+    VNemoState(point : int, state : NemoState);
+	string_to_VNemo(str : string) ->  VNemoStructure;
+	NemoStructure_to_VNemoStructure(structure : NemoStructure) -> VNemoStructure;
+	NemoInstruction_to_VNemoInstruction(instruction : NemoInstruction) -> [VNemoInstruction];
+	VNemoStructure_to_string(structure : VNemoStructure) -> string;
+	execute_vnemo_program(code : VNemoStructure) -> Set<VNemoState>;
+}
+
+string_to_VNemo(str : string) ->  VNemoStructure {
+	virtual_machine_nemo_parser = compilePegGrammar("#include VNeMo.lingo");
+	parsic(virtual_machine_nemo_parser, str, defaultPegActions);
+}
+
+VNemoStructure_to_string(structure : VNemoStructure) -> string {
+	fold(structure.declarations, "", \acc, declararion -> acc + NemoDeclaration_to_string(declararion) + "\n") + foldi(structure.instructions, "", \i, acc, s -> acc + i2s(i) + ": " + VNemoInstruction_to_string(s) + "\n");
+}
+
+VNemoInstruction_to_string(instruction : VNemoInstruction) -> string {
+	switch (instruction) {
+		VNemoAssign(variable, value, places): 
+			variable + " := " + NemoExpression_to_string(value) + " goto {" + strGlue(map(places, i2s), ", ") + "}";
+		VNemoCondition(condition, correct_action, incorrect_action, correct_points, incorrect_points): 
+			"if (" + NemoExpression_to_string(correct_action) + " " + condition + " " + NemoExpression_to_string(incorrect_action) + ") " + "goto {" + strGlue(map(correct_points, i2s), ", ") + "} else " + "goto {" + strGlue(map(incorrect_points, i2s), ", ") + "}";
+	}
+}
+
+NemoStructure_to_VNemoStructure(structure : NemoStructure) -> VNemoStructure {
+	VNemoStructure(structure.declarations, NemoInstruction_to_VNemoInstruction(structure.instruction));
+}
+
+NemoInstruction_to_VNemoInstruction(instruction : NemoInstruction) -> [VNemoInstruction] {
+	switch (instruction) {
+		NemoAssign(variable, value): [VNemoAssign(variable, value, [1])];
+		NemoTest(condition, correct_action, incorrect_action): [VNemoCondition(condition, correct_action, incorrect_action, [1], [])];
+		NemoSequence(instructions):
+			concatA(fold(instructions, VNemoSequence([[]], 0), \acc, s -> { vnemo_instruction = NemoInstruction_to_VNemoInstruction(s);
+																			size = find_vnemo_max_point(vnemo_instruction);
+																			VNemoSequence(concat(acc.instructions, [add_vnemo_point(vnemo_instruction, acc.maximum_point)]), acc.maximum_point + size); }).instructions);
+		NemoCycle(b): {
+			vnemo_instructions = add_vnemo_point(NemoInstruction_to_VNemoInstruction(b), 1);
+			size = find_vnemo_max_point(vnemo_instructions);
+			concat([VNemoCondition("==", NemoInt(0), NemoInt(0), [1, size], [])], replace_vnemo_point(vnemo_instructions, size, 0));
+		}
+	}
+}
+
+add_vnemo_point(instructions : [VNemoInstruction], n : int) -> [VNemoInstruction] {
+	add_point = \points -> fold(points, [], \acc, l -> concat(acc, [l + n]));
+	fold(instructions, [], \acc, s -> concat(acc, [switch (s) { VNemoAssign(variable, value, places):  {VNemoAssign(variable, value, add_point(places));};
+																VNemoCondition(condition, correct_action, incorrect_action, correct_points, incorrect_points):  
+																VNemoCondition(condition, correct_action, incorrect_action, add_point(correct_points), add_point(incorrect_points));}]))
+}
+
+find_vnemo_max_point(instructions : [VNemoInstruction]) -> int {
+	fold(instructions, -1, \acc, instruction -> max(acc, switch (instruction) { VNemoAssign(variable, value, places): fold(places, -1, max);
+																				VNemoCondition(condition, correct_action, incorrect_action, correct_points, incorrect_points): 
+																				max(fold(correct_points, -1, max), fold(incorrect_points, -1, max));}));
+}
+
+replace_vnemo_point(instructions : [VNemoInstruction], n : int, m : int) -> [VNemoInstruction] {
+	replace_point = \points -> fold(points, [], \acc, l -> concat(acc, if (l == n) [m] else [l]));
+	replace_instruction = \instruction -> {
+		switch (instruction) {
+			VNemoAssign(variable, value, places): VNemoAssign(variable, value, replace_point(places));
+			VNemoCondition(condition, correct_action, incorrect_action, correct_points, incorrect_points): 
+			VNemoCondition(condition, correct_action, incorrect_action, replace_point(correct_points), replace_point(incorrect_points));
+			
+		}
+	}
+	fold(instructions, [], \acc, s -> concat(acc, [replace_instruction(s)]))
+}
+
+execute_vnemo_program(code : VNemoStructure) -> Set<VNemoState> {
+	for(makeSet1(VNemoState(0, NemoState(makeTree()))), \curr -> existsSet(curr, \conf -> conf.point != length(code.instructions)), \curr -> foldSet(curr, makeSet(), \acc, conf -> mergeSets(acc, vnemo_action(code, conf))));
+}
+
+vnemo_action(structure : VNemoStructure, configuration : VNemoState) -> Set<VNemoState> {
+	switch (structure.instructions[configuration.point]) {
+		VNemoAssign(variable, value, places):
+			eitherMap(vnemo_execute(value, configuration.state), \new_val -> { new_state = NemoState(setTree(configuration.state.vars, variable, new_val));
+																							fold(places, makeSet(), \acc, point -> insertSet(acc, VNemoState(point, new_state))); }, makeSet());
+		VNemoCondition(condition, correct_action, incorrect_action, correct_points, incorrect_points):
+			eitherMap(vnemo_parse_condition(condition, correct_action, incorrect_action, configuration.state), \b -> 
+					if (b) {
+						fold(correct_points, makeSet(), \acc, point -> insertSet(acc, VNemoState(point, configuration.state)));
+					} else {
+						fold(incorrect_points, makeSet(), \acc, point -> insertSet(acc, VNemoState(point, configuration.state)));
+					}, makeSet());
+	}
+}
+
+vnemo_execute(type : NemoExpression, state : NemoState) -> Maybe<NemoType> {
+	switch (type) {
+		NemoUnary(operation, expression): 
+			maybeBind(vnemo_execute(expression, state), \exec ->
+				switch (exec) {
+					NemoInt(x): {
+						Some(NemoInt(if (operation == "+") x else
+						 			 if (operation == "-") -x else 
+									 0));
+					}
+					default: {
+						None();
+					}
+				} );
+		NemoBinary(operation, left_expression, right_expression): maybeBind2(\left_value, right_value -> 
+				switch (left_value) {
+					NemoInt(x): {
+						switch (right_value) {
+							NemoInt(y):
+								Some(NemoInt(if (operation == "+") x + y else
+											 if (operation == "*") x * y else
+											 if (operation == "-") x - y else
+											 if (operation == "/") x / y else 
+											 0));
+								default: {
+									None();
+								}
+						}
+					}
+					default: {
+						None();
+					}
+				} )(vnemo_execute(left_expression, state), vnemo_execute(right_expression, state));
+		NemoVar(variable): {
+			lookupTree(state.vars, variable);
+		}
+		NemoInt(value): Some(NemoInt(value));
+	}
+}
+
+vnemo_parse_condition(op : string, first_half : NemoExpression, second_half : NemoExpression, state : NemoState) -> Maybe<bool> { maybeBind2(\first_part, second_part ->
+	switch (first_part) {
+		NemoInt(x):
+			switch (second_part) {
+				NemoInt(y): Some(if (op == "==") x == y else 
+								 if (op == "!=") x != y else
+								 if (op == "<=") x <= y else
+								 if (op == ">=") x >= y else
+								 if (op == "<") x < y else
+								 if (op == ">") x > y else 
+								 false);
+				default: {
+					None();
+				}
+			}
+		default: {
+			None();
+		} 
+	}) (vnemo_execute(first_half, state), vnemo_execute(second_half, state));
+}

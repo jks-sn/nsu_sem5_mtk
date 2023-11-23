@@ -1,7 +1,7 @@
-import NeMo;
+import VNeMo;
 
 main() -> void {
-	fileName = "summ.nm";
+	fileName = "example.nm";
 	println(getFileContent(fileName));
 	NeMo = string_to_Nemo(getFileContent(fileName));
 
@@ -10,5 +10,13 @@ main() -> void {
 
 	println("NeMo code:");
 	println(NemoStructure_to_string(NeMo));
+	println(NemoStructure_to_VNemoStructure(NeMo));
+	println(VNemoStructure_to_string(NemoStructure_to_VNemoStructure(NeMo)));
 	quit(0);
+
+	filename1 = "example.vnm";
+	println(getFileContent(filename1));
+	VNeMo = string_to_VNemo(getFileContent(filename1));
+	println(VNeMo);
+	println(execute_vnemo_program(NemoStructure_to_VNemoStructure(NeMo)));
 }
